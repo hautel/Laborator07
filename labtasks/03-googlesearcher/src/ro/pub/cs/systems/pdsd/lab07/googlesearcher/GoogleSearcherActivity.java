@@ -1,7 +1,18 @@
 package ro.pub.cs.systems.pdsd.lab07.googlesearcher;
 
+import java.io.IOException;
+
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import ro.pub.cs.systems.pdsd.lab07.googlesearcher.general.Constants;
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -36,6 +47,30 @@ public class GoogleSearcherActivity extends Activity {
 			// - mimetype is text/html
 			// - encoding is UTF-8
 			// - history is null
+			
+			HttpClient httpClient = new DefaultHttpClient();
+			HttpGet httpGet = new HttpGet(Constants.GOOGLE_INTERNET_ADDRESS + keyword);
+			
+			ResponseHandler response = new BasicResponseHandler();
+			
+			try {
+				final String result = httpClient.execute(httpGet, response);
+				
+				googleResultsWebView.post(new Runnable() {
+					@Override
+					public void run() {
+						googleResultsWebView.loadDataWithBaseURL(Constants.GOOGLE_INTERNET_ADDRESS, result, Constants.MIME_TYPE, Constants.CHARACTER_ENCODING, null);
+					}
+				});
+				
+				
+			} catch (ClientProtocolException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 
 		}
 	}
@@ -52,7 +87,13 @@ public class GoogleSearcherActivity extends Activity {
 			// split a multiple word (separated by space) keyword and link them through +
 			// prepend the keyword with "search?q=" string
 			// start the GoogleSearcherThread passing the keyword
-
+			String keyWord = keywordEditText.getText().toString();
+			if(keyWord.isEmpty())
+				return;
+			String searchWord = keyWord.replace(' ', '+');
+			Log.d("Tag", searchWord);
+			GoogleSearcherThread startSearch = new GoogleSearcherThread("search?q=" + searchWord);
+			startSearch.start();
 		}
 	}
 

@@ -1,6 +1,22 @@
 package ro.pub.cs.systems.pdsd.lab07.calculatorwebservice.graphicaluserinterface;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+
 import ro.pub.cs.systems.pdsd.lab07.calculatorwebservice.R;
+import ro.pub.cs.systems.pdsd.lab07.calculatorwebservice.general.Constants;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -10,6 +26,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
+//import android.provider.SyncStateContract.Constants;
 
 public class CalculatorWebServiceActivity extends Activity {
 	
@@ -26,11 +43,72 @@ public class CalculatorWebServiceActivity extends Activity {
 			// get operators 1 & 2 from corresponding edit texts (operator1EditText, operator2EditText)
 			// signal missing values through error messages
 			// get operation from operationsSpinner
-			
+			String operator1 = operator1EditText.getText().toString();
+			String operator2 = operator2EditText.getText().toString();
+			if(operator1.isEmpty() || operator2.isEmpty()){
+				//TODO throw error
+			}
+			String operation = operationsSpinner.getSelectedItem().toString();
+			if(operation.isEmpty()){
+				//TODO throw error
+			}
 			// create an instance of a HttpClient object
+			HttpClient httpClient = new DefaultHttpClient(); 
 			
 			// get method used for sending request from methodsSpinner
-			
+			if(methodsSpinner.getSelectedItemId() == Constants.GET_OPERATION){
+				HttpGet httpGet = new HttpGet(Constants.GET_WEB_SERVICE_ADDRESS
+										+ "?" + Constants.OPERATION_ATTRIBUTE + "=" + operation
+										+ "&" + Constants.OPERATOR1_ATTRIBUTE + "=" + operator1
+										+ "&" + Constants.OPERATOR2_ATTRIBUTE + "=" + operator2);
+				ResponseHandler<String> resultHandler = new BasicResponseHandler();
+				try {
+					final String content = httpClient.execute(httpGet,resultHandler);
+					resultTextView.post(new Runnable() {
+						@Override
+						public void run() {
+							resultTextView.setText(content);
+						}
+					});
+				} catch (ClientProtocolException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			}else if(methodsSpinner.getSelectedItemId() == Constants.POST_OPERATION){
+				HttpPost httpPost = new HttpPost(Constants.POST_WEB_SERVICE_ADDRESS);
+				List<NameValuePair> params = new ArrayList<NameValuePair>();
+				
+				params.add(new BasicNameValuePair(Constants.OPERATION_ATTRIBUTE, operation));
+				params.add(new BasicNameValuePair(Constants.OPERATOR1_ATTRIBUTE, operator1));
+				params.add(new BasicNameValuePair(Constants.OPERATOR2_ATTRIBUTE, operator2));
+				try{
+					UrlEncodedFormEntity urlEncodedFormEntity = new UrlEncodedFormEntity(params);
+					httpPost.setEntity(urlEncodedFormEntity);
+				}catch(Exception ex){
+					//TODO
+				}
+				try {
+					ResponseHandler<String> resultHandler = new BasicResponseHandler();
+					final String result = httpClient.execute(httpPost,resultHandler);
+					resultTextView.post(new Runnable() {
+						@Override
+						public void run() {
+							resultTextView.setText(result);
+						}
+					});
+				} catch (ClientProtocolException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			}
 			// 1. GET
 			// a) build the URL into a HttpGet object (append the operators / operations to the Internet address)
 			// b) create an instance of a ResultHandler object
